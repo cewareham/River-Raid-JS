@@ -8,6 +8,7 @@ class Game {
         this.goout = false;
         this.intro = false;
         this.screen_height = 480;
+        this.terrain = [];
         // define shapes - easier than using #s
         this.eShape = {
             PLANE: 0, PLANE_LEFT: 1, PLANE_RIGHT: 2, HELI_RIGHT0: 3, HELI_RIGHT1: 4,
@@ -17,10 +18,26 @@ class Game {
         this.centerCanvas();
         //                      x   y width height  shape#        out expl
         this.plane = new Shape(370, 420, 49, 42, this.eShape.PLANE, 0, 0);
+        
+        for (let ii=0; ii<3; ii++) {
+            this.terrain.push(ii);
+            this.terrain[ii] = new Terrain(width, 3, - ii * 336 - 100);
+        }
     }
   
     update() {
 
+    }
+
+    lands() {
+        for (let ii=0; ii<3; ii++) {
+            this.terrain[ii].show();
+            this.terrain[ii].y += 5;
+            if (this.terrain[ii].y > this.screen_height) {
+                this.terrain[ii].y = -this.screen_height;
+                this.terrain[ii].form = floor(random(0, 7));
+            }
+        }
     }
   
     render() {
@@ -37,6 +54,7 @@ class Game {
         rect(0, 0, 20, height);         // vertical green strip on left
         rect(width-20, 0, 20, height);  // vertical green strip on right
 
+        this.lands();
         this.plane.show();
 
         // gray panel containing gas meter (Painel)
