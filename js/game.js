@@ -6,6 +6,8 @@ class Game {
         this.canvas = canvas;
         this.game = false;
         this.goout = false;
+        this.intro = false;
+        this.screen_height = 480;
         // define shapes - easier than using #s
         this.eShape = {
             PLANE: 0, PLANE_LEFT: 1, PLANE_RIGHT: 2, HELI_RIGHT0: 3, HELI_RIGHT1: 4,
@@ -25,7 +27,46 @@ class Game {
         // river
         background(clr[3]);     // river -> blue
 
+        // releasing control (Liberando controle)
+        if (!this.plane.out && !this.intro) {
+            this.control();     // check keyboard
+        }
+        
+        // bottom (Fundo)
+        fill(clr[2]);
+        rect(0, 0, 20, height);         // vertical green strip on left
+        rect(width-20, 0, 20, height);  // vertical green strip on right
+
         this.plane.show();
+
+        // gray panel containing gas meter (Painel)
+        fill(clr[7]);
+        rect(0, this.screen_height, width, 130);
+        fill(clr[14]);
+        rect(0, height-117, width, 112);
+        // gas meter (medidor de gasolina)
+        noFill();
+        strokeWeight(4);
+        stroke(clr[7]);
+        rect(320, 515, 204, 44);
+        noStroke();
+        fill(clr[7]);
+        rect(335, 515, 11, 13);
+        rect(422, 515, 5, 13);
+        rect(500, 515, 11, 13);
+    }
+
+    control() {
+        // controlling steering with arrow keys (Controlando a direcao)
+        this.plane.shape = this.eShape.PLANE;
+        if (keyIsDown(LEFT_ARROW) && this.plane.x > 10) {
+            this.plane.x -= 5;
+            this.plane.shape = this.eShape.PLANE_LEFT;
+        }
+        if (keyIsDown(RIGHT_ARROW) && this.plane.x < 734) {
+            this.plane.x += 5;
+            this.plane.shape = this.eShape.PLANE_RIGHT;
+        }
     }
 
     centerCanvas() {
