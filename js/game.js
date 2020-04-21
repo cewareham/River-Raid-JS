@@ -4,12 +4,24 @@
 class Game {
     constructor(canvas) {
         this.canvas = canvas;
-        this.game = false;
+        this.vel_y = 2;
+        this.speed = 0;
+        this.lives = 1;     // vidas
+        this.n_eny = 5;
+        this.points = 0;    // pontos=points, pontes=bridges
+        this.delay_y = 3;
+
+        this.vert_speed = 5;
+
+        this.mover = false;
         this.goout = false; // go out (sair)
+        this.game = false;
         this.intro = false;
+        this.hitplane = false;
         this.screen_height = 480;
         this.island = [];   // island (ilha)
         this.terrain = [];
+        this.enemy = [];
         // define shapes - easier than using #s
         this.eShape = {
             PLANE: 0, PLANE_LEFT: 1, PLANE_RIGHT: 2, HELI_RIGHT0: 3, HELI_RIGHT1: 4,
@@ -17,6 +29,7 @@ class Game {
             AIRPLANE_D: 10, FUEL: 11, EXPL1:12, EXPL2: 13, HOME: 14
         }
         this.centerCanvas();
+        this.base = new Terrain(width, 8, -100);
         //                      x   y width height  shape#        out expl
         this.plane = new Shape(370, 420, 49, 42, this.eShape.PLANE, 0, 0);
         
@@ -26,10 +39,44 @@ class Game {
             this.terrain.push(ii);
             this.terrain[ii] = new Terrain(width, 3, - ii * 336 - 100);
         }
+
+        for (let ii=0; ii< this.n_eny; ii++) {
+            this.enemy.push(ii);
+            this.enemy[ii] = new Shape(0, 0, 0, 0, 0, 0, 0);
+        }
+    }
+
+    restart() {
+        this.lives = 3;     // vidas
+        this.points = 0;    // pontos
+        this.base.y = -100;
+        this.mover = false;
+        this.plane.out = true;
     }
   
     update() {
+        // scroll island down to start (base) position
+        if (this.base.y < 238 && !this.game) {
+            this.intro = true;
+            this.base.y += this.vert_speed;//5;
+            for (let ii=0; ii<this.n_eny; ii++) {
+                this.enemy[ii].y += this.vert_speed;//5;
+                if (ii < 3) {
+                    this.island[ii].y += this.vert_speed;//5;
+                    this.terrain[ii].y += this.vert_speed;//5;
+                }
+            }
+        }
 
+        if (this.base.y == -100 && this.plane.out) {
+            //console.log(this.base.y, this.plane.out);
+            this.ler_pos();
+        }
+
+        if (this.base.y < 280 && this.game && this.intro) {
+            //console.log(this.base.y, this.game, this.intro);
+            this.base.y += this.vert_speed;//5;
+        }
     }
 
     lands() {
@@ -37,7 +84,7 @@ class Game {
             this.island[ii].show();
 
             this.terrain[ii].show();
-            this.terrain[ii].y += 5;
+            this.terrain[ii].y += this.vert_speed;//5;
             if (this.terrain[ii].y > this.screen_height) {
                 this.terrain[ii].y = -this.screen_height;
                 this.terrain[ii].form = floor(random(0, 7));
