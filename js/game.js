@@ -202,6 +202,15 @@ class Game {
         rect(335, 515, 11, 13);
         rect(422, 515, 5, 13);
         rect(500, 515, 11, 13);
+
+        // Restart base, lands & islands (Reinicia Terras Base e Ilhas)
+        if (this.island[2].y > this.screen_height) {
+            this.base.y = -400;
+            for (let ii=0; ii<3; ii++) {
+                this.terrain[ii].form = floor(random(0, 7));
+                this.island[ii].form = floor(random(0, 13));
+            }
+        }
     }
 
     control() {
