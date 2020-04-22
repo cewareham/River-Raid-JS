@@ -4,7 +4,7 @@
 class Game {
     constructor(canvas) {
         this.canvas = canvas;
-        this.vel_y = 2;
+        this.vel_y = 5;     // y velocity -> vertical speed, default = 2
         this.speed = 0;
         this.lives = 1;     // vidas
         this.n_eny = 5;
@@ -81,9 +81,6 @@ class Game {
                     this.terrain[ii].y += this.vert_speed;//5;
                 }
             }
-        } else {
-            ///this.game = true;
-            //this.intro = false;
         }
 
         if (this.base.y == -100 && this.plane.out) {
@@ -130,7 +127,7 @@ class Game {
         }
 
         //if (this.base.y == 238 && this.game && this.intro && keyPressed()) {
-        if (this.base.y > 237 && this.game && this.intro && keyPressed()) {
+        if (this.base.y > 237 && this.game && this.intro && keyIsPressed) {
             this.intro = false;
         }
     }
@@ -149,7 +146,7 @@ class Game {
  
     lands() {
         // move the base (mover a base)
-        if (this.game && !this.intro && ! this.plane.t_expl) {
+        if (this.game && !this.intro && !this.plane.t_expl) {
             this.base.y += this.mover * this.vel_y;
         }
 
@@ -165,17 +162,6 @@ class Game {
                 this.island[ii].show();
             }
         }
-
-        // for (let ii=0; ii<3; ii++) {
-        //     this.island[ii].show();
-
-        //     this.terrain[ii].show();
-        //     this.terrain[ii].y += this.vert_speed;//5;
-        //     if (this.terrain[ii].y > this.screen_height) {
-        //         this.terrain[ii].y = -this.screen_height;
-        //         this.terrain[ii].form = floor(random(0, 7));
-        //     }
-        // }
     }
   
     render() {
@@ -219,6 +205,17 @@ class Game {
     }
 
     control() {
+        // game speed (velocidade do jogo)
+        if (this.game && !this.intro) {
+            this.speed += this.vert_speed;//1;
+            if (this.speed > this.delay_y) {
+                this.mover = true;
+                this.speed = 0;
+            } else {
+                this.mover = false;
+            }
+        }
+
         // controlling steering with arrow keys (Controlando a direcao)
         this.plane.shape = this.eShape.PLANE;
         if (keyIsDown(LEFT_ARROW) && this.plane.x > 10) {
@@ -228,6 +225,15 @@ class Game {
         if (keyIsDown(RIGHT_ARROW) && this.plane.x < 734) {
             this.plane.x += 5;
             this.plane.shape = this.eShape.PLANE_RIGHT;
+        }
+
+        // controlling the speed (controlando a velocidade)
+        if (keyIsDown(UP_ARROW)) {
+            this.delay_y = 0;
+        } else if (keyIsDown(DOWN_ARROW)) {
+            this.delay_y = 2;
+        } else {
+            this.delay_y = 1;
         }
     }
 
