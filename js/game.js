@@ -21,6 +21,7 @@ class Game {
         this.screen_height = 480;
         this.island = [];   // island (ilha)
         this.terrain = [];
+        this.bridges = [];  // bridges = pontes
         this.enemy = [];
         this.data_island = [3, 3, 3];
         this.data_terrain = [3, 3, 3];
@@ -39,9 +40,19 @@ class Game {
         for (let ii=0; ii<3; ii++) {
             this.island.push(ii);
             this.island[ii] = new Island(width, 1, 0);
+
             this.terrain.push(ii);
             this.terrain[ii] = new Terrain(width, 3, - ii * 336 - 100);
+
+            this.bridges.push(ii);
+            this.bridges[ii] = new Bridge(ii*485, -this.screen_height, 316, 77, 0, 0, 0);
         }
+        
+        this.bridges[2].shape = 1;
+        this.bridges[2].x = 312;
+        this.bridges[2].out = 1;
+        this.bridges[2].h = 68;
+        this.bridges[2].w = 175;
 
         for (let ii=0; ii< this.n_eny; ii++) {
             this.enemy.push(ii);
@@ -56,6 +67,8 @@ class Game {
         this.base.y = -100;
         this.mover = false;
         this.plane.out = true;
+        this.hitplane = false;
+        this.bridges[2].out = true;
 
         for (let ii=0; ii<3; ii++) {
             this.terrain[ii].form = 3;
@@ -108,7 +121,7 @@ class Game {
 
         if (this.plane.out && !this.plane.t_expl && this.game && this.lives > 0 && !this.intro) {
             this.intro = true;
-            //this.bridges[2].out = true;     // pontos=points, pontes=bridges!
+            this.bridges[2].out = true;     // pontos=points, pontes=bridges!
             this.plane.x = 370;
             this.plane.shape = this.eShape.PLANE;
             this.base.y = -100;
@@ -163,6 +176,22 @@ class Game {
                 this.island[ii].show();
             }
         }
+
+        for (let ii=0; ii<3; ii++) {
+            // bridges (pontes)
+            this.bridges[ii].y = this.base.y + 164;
+            // in python x < y <= z is equivalent to x < y and y <= z
+            // in javascript x < y <= z is equiv to x < y [true or false] and [true or false, i.e 1 or 2] <= z
+            if (-this.screen_height < this.base.y && this.base.y < this.screen_height) {
+                this.bridges[ii].show();
+            }
+        }
+        this.bridges[2].y = this.base.y + 169;
+
+        // regenerate the bridge (regenera a ponte)
+        if (this.base.y > this.screen_height && !this.intro) {
+            this.bridges[2].out = false;
+        }
     }
   
     render() {
@@ -181,8 +210,9 @@ class Game {
         rect(0, 0, 20, height);         // vertical green strip on left
         rect(width-20, 0, 20, height);  // vertical green strip on right
 
-        // in python x < y <= z is equivalent to x < y and y <= z
-        // in javascript x < y <= z is equiv to x < y [true or false] and [true or false, i.e 1 or 2] <= z
+        // in python x < y < z is equivalent to x < y and y < z
+        // in javascript x < y < z is equiv to x < y [true or false] and [true or false, i.e 1 or 2] < z
+        // so {if -screen_height < base.y < screen_height:} is equiv to:
         if (-this.screen_height < this.base.y && this.base.y < this.screen_height) {
             this.base.show();            
         }
