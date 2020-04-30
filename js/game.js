@@ -31,6 +31,7 @@ class Game {
             AIRPLANE_D: 10, FUEL: 11, EXPL1:12, EXPL2: 13, HOME: 14
         }
         this.centerCanvas();
+        this.shot = new Shot(1, 0, 1);  // tiro = 'shot'
         this.base = new Terrain(width, 8, -100);
         //                      x   y width height  shape#        out expl
         this.plane = new Shape(370, 420, 49, 42, this.eShape.PLANE, 0, 0);
@@ -172,6 +173,8 @@ class Game {
         if (!this.plane.out && !this.intro) {
             this.control();     // check keyboard
         }
+
+        this.shot.show(this.plane.x + this.plane.w/2, this.plane.y + this.plane.h/2);
         
         // bottom (Fundo)
         fill(clr[2]);
@@ -244,6 +247,10 @@ class Game {
         } else {
             this.delay_y = 1;
         }
+
+        // shooting (atriando)
+        if (keyIsDown(32))      // keycode 32 = space bar
+            this.shot.shooting = true;
     }
 
     centerCanvas() {

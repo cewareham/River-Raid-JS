@@ -10,7 +10,9 @@ class Terrain {
         this.form = form;
         this.clr = clr[2];  // green for land
         // NOTE: eace # in the array draws 6 vertical lines
-        // the screen_height = 480, so should have 480/6 = 80 #s for best scroll
+        //  screen_height (game scroll area) = 480,
+        //  so 480/6 = 80 #s for terrain height to equal screen_height
+        //  but we need a few more than 80 to avoid sceen anomalies
         this.mp = [
             [    1,  2,  3,  4,  5,  6,  7,  8,  9, 10,  // 0
                 11, 12, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
