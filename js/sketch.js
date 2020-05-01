@@ -7,9 +7,7 @@ function setup() {
     game = new Game(canvas);
 }
 
-
 function draw() {
-    //background(0, 255, 0);
     game.update();
     game.render();
 }

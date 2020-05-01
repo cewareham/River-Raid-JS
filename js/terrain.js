@@ -9,7 +9,7 @@ class Terrain {
         this.wdt = wdt;
         this.form = form;
         this.clr = clr[2];  // green for land
-        // NOTE: eace # in the array draws 6 vertical lines
+        // NOTE: each # in the array draws 6 vertical lines
         //  screen_height (game scroll area) = 480,
         //  so 480/6 = 80 #s for terrain height to equal screen_height
         //  but we need a few more than 80 to avoid sceen anomalies
@@ -94,7 +94,7 @@ class Terrain {
     show() {
         noStroke();
         fill(this.clr);
-        let ter = this.mp[this.form];
+        //let ter = this.mp[this.form];
         let len = this.mp[this.form].length;
         for (let py=0; py<len; py++) {
             rect(0, this.y + py * this.h, this.w + this.mp[this.form][py] * this.w, this.h);

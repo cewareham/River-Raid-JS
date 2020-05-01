@@ -6,10 +6,12 @@ class Game {
         this.canvas = canvas;
         this.vel_y = 5;     // y velocity -> vertical speed, default = 2
         this.speed = 0;
-        this.lives = 1;     // vidas
+        this.lives = 1;     // lives = vidas
         this.n_eny = 5;
         this.points = 0;    // pontos=points, pontes=bridges
+        this.propeller = 0; // helice = propeller
         this.delay_y = 3;
+        this.eny_box = 96;
 
         this.vert_speed = 5;
 
@@ -21,8 +23,9 @@ class Game {
         this.screen_height = 480;
         this.island = [];   // island (ilha)
         this.terrain = [];
-        this.bridges = [];  // bridges = pontes
+        this.bridges = [];  // bridges (pontes)
         this.enemy = [];
+        this.data_enemy = [];
         this.data_island = [3, 3, 3];
         this.data_terrain = [3, 3, 3];
         // define shapes - easier than using #s
@@ -57,6 +60,7 @@ class Game {
         for (let ii=0; ii< this.n_eny; ii++) {
             this.enemy.push(ii);
             this.enemy[ii] = new Shape(0, 0, 0, 0, 0, 0, 0);
+            this.data_enemy.push(ii);
         }
         this.restart();
     }
@@ -73,10 +77,17 @@ class Game {
         for (let ii=0; ii<3; ii++) {
             this.terrain[ii].form = 3;
             this.data_terrain[ii] = 3;
-            this.terrain[ii].y = -ii * 336 -100;
+            this.terrain[ii].y = -ii * 336 - 100;
             this.island[ii].y = -1600;
             this.data_island[ii] = 13;
         }
+
+        for (let ii=0; ii<this.n_eny; ii++) {
+            this.data_enemy[ii] = [100, ii*this.eny_box - this.screen_height, 42, 30, 6, 1, 0];
+        }
+        this.data_enemy[4] = [350, -96, 81, 24, 8, 0];
+        this.data_enemy[3] = [450, -192, 42, 30, 6, 0];
+        this.data_enemy[1] = [500, -384, 37, 72, 11, 0];
     }
   
     update() {
@@ -84,7 +95,6 @@ class Game {
         // this is the 'intro' when this.game = false
         // for the intro this.base.y goes from -100 to +240
         // when this.base.y hits 240 the intro code below will be skipped
-        // at that time this.game should be set to true & this.intro to false
         if (this.base.y < 238 && !this.game) {
             this.intro = true;
             this.base.y += this.vert_speed;//5;
@@ -98,12 +108,10 @@ class Game {
         }
 
         if (this.base.y == -100 && this.plane.out) {
-            //console.log(this.base.y, this.plane.out);
             this.ler_pos();
         }
 
         if (this.base.y < 238 && this.game && this.intro) {
-            //console.log(this.base.y, this.game, this.intro);
             this.base.y += this.vert_speed;//5;
             for (let ii=0; ii<this.n_eny; ii++) {
                 // Space between base and enemies (Espaco entre a base e os inimigos)
@@ -121,7 +129,7 @@ class Game {
 
         if (this.plane.out && !this.plane.t_expl && this.game && this.lives > 0 && !this.intro) {
             this.intro = true;
-            this.bridges[2].out = true;     // pontos=points, pontes=bridges!
+            this.bridges[2].out = true;     // pontos=points, pontes=bridges
             this.plane.x = 370;
             this.plane.shape = this.eShape.PLANE;
             this.base.y = -100;
@@ -131,13 +139,11 @@ class Game {
         //if (this.base.y == 238 && this.game && this.intro) {
         if (this.base.y > 237 && this.game && this.intro) {
             this.plane.out = false;
-            //this.intro = false;
         }
 
         if (keyIsDown(113)) {   // F2 keycode = 113
             this.restart();
             this.game = true;
-            //this.intro = false;
         }
 
         //if (this.base.y == 238 && this.game && this.intro && keyPressed()) {
@@ -150,12 +156,88 @@ class Game {
         if (this.lives < 0) {
             this.game = false;
         }
+
+        for (let ii=0; ii<this.n_eny; ii++) {
+            this.enemy[ii].x = this.data_enemy[ii][0];
+            this.enemy[ii].y = this.data_enemy[ii][1];
+            this.enemy[ii].w = this.data_enemy[ii][2];
+            this.enemy[ii].h = this.data_enemy[ii][3];
+            this.enemy[ii].shape = this.data_enemy[ii][4];
+            this.enemy[ii].out = this.data_enemy[ii][5];
+        }
  
         for (let ii=0; ii<3; ii++) {
             this.terrain[ii].form = this.data_terrain[ii];
             this.island[ii].form = this.data_island[ii];
         }
         this.terrain[0].y = 100;
+    }
+
+    enemies() {     // enemies = inimigos
+        this.propeller = !this.propeller;
+
+        for (let ii=0; ii<this.n_eny; ii++) {
+            // animate helicopter propeller (anima helice dos helicopteros)
+            if (this.propeller && this.enemy[ii].shape == 3 || this.enemy[ii].shape == 5) {
+                this.enemy[ii].shape += 1;
+            } else if (this.enemy[ii].shape == 4 || this.enemy[ii].shape == 6) {
+                this.enemy[ii].shape -= 1;
+            }
+
+            if (this.game && !this.intro) {
+                // move enemies vertically (movimenta inimigos na vertical)
+                this.enemy[ii].y += this.mover * this.vel_y;
+                // move enemy ships & helicopters (movimenta inimigos navios e helicopteros)
+                if (2 < this.enemy[ii].shape && this.enemy[ii].shape < 9 && this.enemy[ii].y > 200 && !this.enemy[ii].out) {
+                    this.enemy[ii].x += this.enemy[ii].dir;
+                }
+
+                // horizontal plane movement (movimento dos avioes na horizontal)
+                if (this.enemy[ii].shape == 10 || this.enemy[ii].shape == 9) {
+                    if (this.enemy[ii].x > width && this.enemy[ii].shape == 10) {
+                        this.enemy[ii].x = 0;
+                    }
+                    if (this.enemy[ii].x < 0 && this.enemy[ii].shape == 9) {
+                        this.enemy[ii].x = width;
+                    }
+                    if (!this.enemy[ii].out & !this.plane.out) {
+                        this.enemy[ii].x += this.enemy[ii].dir;
+                    }
+                }
+
+                // reposition enemies (reposicionando inimigos)
+                //if (this.enemy[ii].y == this.screen_height - this.eny_box / 3) {
+                // our speed is > one line per frame so can't test for y position == value
+                // must instead test for y position > value-1
+                if (this.enemy[ii].y > (this.screen_height - this.eny_box / 3) - 1) {
+                    this.enemy[ii].y = 0;
+                    if (this.base.y < this.enemy[ii].y && this.enemy[ii].y < this.base.y + 400) {
+                        this.enemy[ii].out = true;
+                    } else {
+                        this.enemy[ii].out = false;
+                    }
+
+                    // draw type of enemies and rank (sorteia tipo de inimigos e posto)
+                    let emys = [4, 6, 7, 8, 9, 10, 11];
+                    let rnd = floor(random(0, 6));
+                    this.enemy[ii].shape = emys[rnd];
+                    if (rnd == 0 || rnd == 1) {
+                        this.enemy[ii].w = 42;
+                        this.enemy[ii].h = 30;
+                    } else if (rnd == 2 || rnd == 3) {
+                        this.enemy[ii].w = 81;
+                        this.enemy[ii].h = 24;
+                    } else if (rnd == 4 || rnd == 5) {
+                        this.enemy[ii].w = 48;
+                        this.enemy[ii].h = 18;
+                    } else if (rnd == 6) {
+                        this.enemy[ii].w = 37;
+                        this.enemy[ii].h = 72;
+                    }
+                }
+            }
+            this.enemy[ii].show();
+        }
     }
  
     lands() {
@@ -180,8 +262,8 @@ class Game {
         for (let ii=0; ii<3; ii++) {
             // bridges (pontes)
             this.bridges[ii].y = this.base.y + 164;
-            // in python x < y <= z is equivalent to x < y and y <= z
-            // in javascript x < y <= z is equiv to x < y [true or false] and [true or false, i.e 1 or 2] <= z
+            // in python x < y < z is equivalent to x < y and y < z
+            // in javascript x < y < z is equiv to x < y [true or false] and [true or false, i.e 1 or 0] < z
             if (-this.screen_height < this.base.y && this.base.y < this.screen_height) {
                 this.bridges[ii].show();
             }
@@ -211,13 +293,14 @@ class Game {
         rect(width-20, 0, 20, height);  // vertical green strip on right
 
         // in python x < y < z is equivalent to x < y and y < z
-        // in javascript x < y < z is equiv to x < y [true or false] and [true or false, i.e 1 or 2] < z
+        // in javascript x < y < z is equiv to x < y [true or false] and [true or false, i.e 1 or 0] < z
         // so {if -screen_height < base.y < screen_height:} is equiv to:
         if (-this.screen_height < this.base.y && this.base.y < this.screen_height) {
             this.base.show();            
         }
 
         this.lands();
+        this.enemies();
         this.plane.show();
 
         // gray panel containing gas meter (Painel)
