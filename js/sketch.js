@@ -1,6 +1,10 @@
 "use strict";
 
-let game;
+let game, fntCooperBlack;
+
+function preload() {
+    fntCooperBlack = loadFont('assets/Cooper Black Regular.ttf');
+}
 
 function setup() {
     let canvas = createCanvas(800, 600);

@@ -4,21 +4,25 @@
 class Game {
     constructor(canvas) {
         this.canvas = canvas;
-        this.vel_y = 5;     // y velocity -> vertical speed, default = 2
+        this.defaultVSpeed = 5;
+        this.vel_y = this.defaultVSpeed;     // y velocity -> vertical speed, default = 2
         this.speed = 0;
         this.lives = 1;     // lives = vidas
         this.n_eny = 5;
+        this.gaslev = 0;    // gazlev
         this.points = 0;    // pontos=points, pontes=bridges
         this.propeller = 0; // helice = propeller
         this.delay_y = 3;
         this.eny_box = 96;
 
-        this.vert_speed = 5;
+        this.vert_speed = this.defaultVSpeed;
+        this.paused = false;
 
         this.mover = false;
         this.goout = false; // go out (sair)
         this.game = false;
         this.intro = false;
+        this.gas_level = 166;   // gaz_level
         this.hitplane = false;
         this.screen_height = 480;
         this.island = [];   // island (ilha)
@@ -67,9 +71,10 @@ class Game {
 
     restart() {
         this.lives = 3;     // vidas
-        this.points = 0;    // pontos
+        this.points = 1056;    // pontos
         this.base.y = -100;
         this.mover = false;
+        this.gas_level = 166;
         this.plane.out = true;
         this.hitplane = false;
         this.bridges[2].out = true;
@@ -130,6 +135,7 @@ class Game {
         if (this.plane.out && !this.plane.t_expl && this.game && this.lives > 0 && !this.intro) {
             this.intro = true;
             this.bridges[2].out = true;     // pontos=points, pontes=bridges
+            this.gas_level = 166;
             this.plane.x = 370;
             this.plane.shape = this.eShape.PLANE;
             this.base.y = -100;
@@ -150,6 +156,24 @@ class Game {
         if (this.base.y > 237 && this.game && this.intro && keyIsPressed) {
             this.intro = false;
         }
+    }
+
+    hitcolortest(obj, clr) {
+        // clr format is eg. "#6E9C42"
+        // p5.js get(x, y) returns color value format eg. [45, 50, 184, 255]->rgba array
+        // so must convert get(x, y) value to clr format with p5.js hex(..) function below
+        if (obj.x >= 0 && obj.x + obj.w <= width && obj.y >= 0 && obj.y + obj.h <= height) {
+            for (let ii=0; ii<floor(obj.w); ii++) {
+                for (let jj=0; jj<floor(obj.h); jj++) {
+                    if ((!ii && (!jj || jj == floor(obj.h) - 1)) || !jj && ii == floor(obj.w) - 1) {
+                        let canvasColor = get(floor(obj.x + ii), floor(obj.y + jj));
+                        canvasColor = "#" + hex(canvasColor[0], 2) + hex(canvasColor[1], 2) + hex(canvasColor[2], 2);
+                        if (canvasColor == clr) return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     ler_pos() {
@@ -206,9 +230,9 @@ class Game {
                 }
 
                 // reposition enemies (reposicionando inimigos)
-                //if (this.enemy[ii].y == this.screen_height - this.eny_box / 3) {
                 // our speed is > one line per frame so can't test for y position == value
                 // must instead test for y position > value-1
+                //if (this.enemy[ii].y == this.screen_height - this.eny_box / 3) {
                 if (this.enemy[ii].y > (this.screen_height - this.eny_box / 3) - 1) {
                     this.enemy[ii].y = 0;
                     if (this.base.y < this.enemy[ii].y && this.enemy[ii].y < this.base.y + 400) {
@@ -219,7 +243,7 @@ class Game {
 
                     // draw type of enemies and rank (sorteia tipo de inimigos e posto)
                     let emys = [4, 6, 7, 8, 9, 10, 11];
-                    let rnd = floor(random(0, 6));
+                    let rnd = round(random(0, 6));
                     this.enemy[ii].shape = emys[rnd];
                     if (rnd == 0 || rnd == 1) {
                         this.enemy[ii].w = 42;
@@ -234,9 +258,36 @@ class Game {
                         this.enemy[ii].w = 37;
                         this.enemy[ii].h = 72;
                     }
+
+                    // generate random positions for enemies (Gerando posicoes aleatorias para os inimigos)
+                    let pos = true;
+                    while (pos) {
+                        this.enemy[ii].x = floor(random(0, 8) * 84 + 23);
+                        pos = this.hitcolortest(this.enemy[ii], clr[2]);
+                        console.log("pos = " + pos);
+                    }
+                    this.enemy[ii].y = -this.eny_box / 3;
+                }
+                if (-370 <= this.base.y && this.base.y < 50 && this.enemy[ii].y > this.screen_height + this.eny_box/2 -1) {
+                    this.enemy[ii].out = true;
+                }
+
+                if (this.enemy[ii].y > this.screen_height + this.eny_box / 2 - 1) {
+                    this.enemy[ii].y = -this.eny_box / 2;
                 }
             }
             this.enemy[ii].show();
+        }
+        // takes gasoline (retira gasolina)
+        if (!this.intro && this.mover) {
+            this.gaslev += 1;
+            if (this.gaslev > 100) {
+                this.gaslev = 0;
+                this.gas_level -= 5;
+            }
+            if (this.gas_level < 0) {
+                this.gas_level = 0;
+            }
         }
     }
  
@@ -319,6 +370,8 @@ class Game {
         rect(422, 515, 5, 13);
         rect(500, 515, 11, 13);
 
+        this.texts();        // textos = texts
+
         // Restart base, lands & islands (Reinicia Terras Base e Ilhas)
         if (this.island[2].y > this.screen_height) {
             this.base.y = -400;
@@ -326,6 +379,35 @@ class Game {
                 this.terrain[ii].form = floor(random(0, 7));
                 this.island[ii].form = floor(random(0, 13));
             }
+        }
+    }
+
+    texts() {
+        // gas meter (medidor)
+        textFont("arial");
+        textSize(33);
+        fill(0);
+        // type ½ -> hold Alt & type 0189, then release Alt
+        text("E      ½      F", 333, 524+31);
+        fill(clr[1]);
+        rect(335+this.gas_level, 529, 10, 27);
+
+        // lives (vidas)
+        textFont(fntCooperBlack);
+        textSize(34);
+        fill(232, 232, 74);
+        text(this.lives, 290, 554+32);
+
+        // points (pontos)
+        if (this.points) {
+            text(this.points, 450, 474+32);
+        }
+
+        // text
+        if (!this.game) {
+            //textFont("arial black");
+            textSize(30);
+            text("River Raid JS"/*JavaScript"*/, 364-45, 552+36);
         }
     }
 
@@ -364,6 +446,15 @@ class Game {
         // shooting (atriando)
         if (keyIsDown(32))      // keycode 32 = space bar
             this.shot.shooting = true;
+
+        if (keyIsDown(80)) {    // keycode 80 = 'p' -> pause, set scrolling to 0 speed
+            this.paused = !this.paused;
+            if (this.paused) {
+                this.vel_y = this.vert_speed = 0;
+            } else {
+                this.vel_y = this.vert_speed = this.defaultVSpeed;
+            }
+        }
     }
 
     centerCanvas() {

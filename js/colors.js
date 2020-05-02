@@ -11,7 +11,7 @@ Portuguese:
 (10-base, 11-asphalt, (1-banner), (12-fuel, 13-white), 14-panel, (1)-letters, ((13-Wall),
  15-tree, 16-trunk), (17-support, 18-board1- 19-board2, (1-banner),(13-shot))
 */
-//             0         1        2          3         4         5          6        7
+//             0         1       2-green terrain 3      4         5          6        7
 //let clr = [0x000000, 0xE8E84A, 0x6E9C42, 0x2D32B8, 0xD2A44A, 0x004030, 0x000089, 0x000000,
 //             8         9       10         11        12        13         14       15   
 //           0xA33915, 0x54A0C5, 0x6F6F6F, 0xAAAAAA, 0xD65C5C, 0xD6D6D6, 0x8E8E8E, 0x9ED065,
