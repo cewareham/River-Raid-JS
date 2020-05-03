@@ -14,6 +14,7 @@ class Game {
         this.propeller = 0; // helice = propeller
         this.delay_y = 3;
         this.eny_box = 96;
+        this.frame = 0;
 
         this.vert_speed = this.defaultVSpeed;
         this.paused = false;
@@ -127,7 +128,7 @@ class Game {
         }
 
         if (this.base.y == -100 && this.plane.out) {
-            this.ler_pos();
+            this.read_pos();
         }
 
         if (this.base.y < 238 && this.game && this.intro) {
@@ -194,7 +195,24 @@ class Game {
         return false;
     }
 
-    ler_pos() {
+    save_pos() {    // salvar_pos = save_pos
+        for (let ii=0; ii<this.n_eny; ii++) {
+            this.data_enemy[ii][0] = this.enemy[ii].x;
+            this.data_enemy[ii][1] = this.enemy[ii].y;
+            this.data_enemy[ii][2] = this.enemy[ii].w;
+            this.data_enemy[ii][3] = this.enemy[ii].h;
+            this.data_enemy[ii][4] = this.enemy[ii].shape;
+            this.data_enemy[ii][5] = this.enemy[ii].out;
+            if (ii < 3) {
+                this.data_terrain[ii] = this.terrain[ii].form;
+                this.data_island[ii] = this.island[ii].form;
+                this.data_home[ii][0] = this.home[ii].x;    // casa = home
+                this.data_home[ii][1] = this.home[ii].y;
+            }
+        }
+    }
+
+    read_pos() {    // ler_pos = read_pos
         if (this.lives < 0) {
             this.game = false;
         }
@@ -220,8 +238,61 @@ class Game {
         this.terrain_intro.y = 100;
     }
 
+    hittest() {
+        this.t_expl = 40;
+        // Shot crashes into walls (Tiro colide com paredes)
+        if (this.hitcolortest(this.shot, clr[2])) {
+            this.shot.y = -this.shot.h
+        }
+
+        // Airplane with walls (Avião com paredes)
+        if ((this.hitcolortest(this.plane, clr[2]) || this.hitplane || !this.gas_level) && !this.plane.out) {
+            this.mover = false;
+            this.hitplane = false;
+            this.plane.out = true;
+            this.plane.t_expl = 40;
+        }
+
+        let enehit = 0;
+        for (let ii=0; ii<this.n_eny; ii++) {
+            // move plane on x axis (movimenta aviões no eixo x)
+            if (this.enemy[ii].shape==5 || this.enemy[ii].shape==6 ||this.enemy[ii].shape==8 ||this.enemy[ii].shape==9) {
+                this.enemy[ii].dir = -2;                
+            } else {
+                this.enemy[ii].dir = 2;
+            }
+
+            let hit = this.enemy[ii].w;
+            this.enemy[ii].w = hit/2;
+            if (this.hitcolortest(this.enemy[ii], clr[2])) {
+                if (this.enemy[ii].shape==5 || this.enemy[ii].shape==6) {
+                    this.enemy[ii].shape = 4;
+                    this.enemy[ii].x += 2;
+                }
+                if (this.enemy[ii].shape==8) {
+                    this.enemy[ii].x += 2;
+                    this.enemy[ii].shape = 7;
+                }
+            }
+            this.enemy[ii].x += hit/2;
+            if (this.hitcolortest(this.enemy[ii], clr[2])) {
+                if (this.enemy[ii].shape==4 || this.enemy[ii].shape==3) {
+                    this.enemy[ii].x -= 2;
+                    this.enemy[ii].shape = 6;
+                }
+                if (this.enemy[ii].shape==7) {
+                   this.enemy[ii].x -= 2;
+                   this.enemy[ii].shape = 8; 
+                }
+            }
+            this.enemy[ii].x -= hit/2;
+            this.enemy[ii].w = hit;
+        }
+    }
+
     enemies() {     // enemies = inimigos
         this.propeller = !this.propeller;
+        this.hittest();
 
         for (let ii=0; ii<this.n_eny; ii++) {
             // animate helicopter propeller (anima helice dos helicopteros)
