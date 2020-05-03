@@ -1,6 +1,6 @@
 "use strict";
 
-// class for land/terrain
+// class for land/terrain -> org class Place
 class Terrain {
     constructor(wdt, form, y) {
         this.y = y;

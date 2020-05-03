@@ -1,5 +1,6 @@
 "use strict";
 
+// class for bridges -> org class Ponte (bridge)
 class Bridge {
     constructor(x, y, w, h, shape, out, t_expl) {
         this.x = x;

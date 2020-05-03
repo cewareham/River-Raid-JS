@@ -25,10 +25,12 @@ class Game {
         this.gas_level = 166;   // gaz_level
         this.hitplane = false;
         this.screen_height = 480;
+        this.home = [];     // home (casa)
         this.island = [];   // island (ilha)
         this.terrain = [];
         this.bridges = [];  // bridges (pontes)
         this.enemy = [];
+        this.data_home = [];
         this.data_enemy = [];
         this.data_island = [3, 3, 3];
         this.data_terrain = [3, 3, 3];
@@ -45,6 +47,11 @@ class Game {
         this.plane = new Shape(370, 420, 49, 42, this.eShape.PLANE, 0, 0);
         
         for (let ii=0; ii<3; ii++) {
+            this.data_home.push(ii);
+            this.home.push(ii);
+            //                                        14->home (house) shape
+            this.home[ii] = new Shape(-100, 0, 85, 56, 14, 0, 0);
+
             this.island.push(ii);
             this.island[ii] = new Island(width, 1, 0);
 
@@ -54,6 +61,8 @@ class Game {
             this.bridges.push(ii);
             this.bridges[ii] = new Bridge(ii*485, -this.screen_height, 316, 77, 0, 0, 0);
         }
+
+        this.terrain_intro = new Terrain(width, 0, 0);
         
         this.bridges[2].shape = 1;
         this.bridges[2].x = 312;
@@ -83,9 +92,13 @@ class Game {
             this.terrain[ii].form = 3;
             this.data_terrain[ii] = 3;
             this.terrain[ii].y = -ii * 336 - 100;
+            this.home[ii].x = 80;
+            this.data_home[ii] = [80, false];
             this.island[ii].y = -1600;
             this.data_island[ii] = 13;
         }
+        this.data_home[1][1] = true;
+        this.terrain_intro.y = 100;
 
         for (let ii=0; ii<this.n_eny; ii++) {
             this.data_enemy[ii] = [100, ii*this.eny_box - this.screen_height, 42, 30, 6, 1, 0];
@@ -99,13 +112,14 @@ class Game {
         // scroll island down to start (base) position (base.y = 240)
         // this is the 'intro' when this.game = false
         // for the intro this.base.y goes from -100 to +240
-        // when this.base.y hits 240 the intro code below will be skipped
+        // when this.base.y hits 240 the intro code below is skipped
         if (this.base.y < 238 && !this.game) {
             this.intro = true;
             this.base.y += this.vert_speed;//5;
             for (let ii=0; ii<this.n_eny; ii++) {
                 this.enemy[ii].y += this.vert_speed;//5;
                 if (ii < 3) {
+                    this.home[ii].y += this.vert_speed;//1; // casa = home
                     this.island[ii].y += this.vert_speed;//5;
                     this.terrain[ii].y += this.vert_speed;//5;
                 }
@@ -125,7 +139,7 @@ class Game {
                 }
                 this.enemy[ii].y += this.vert_speed;//1;
                 if (ii < 3) {
-                    //this.casa[ii].y += this.vert_speed;//1; // casa = home
+                    this.home[ii].y += this.vert_speed;//1; // casa = home
                     this.island[ii].y += this.vert_speed;//1;
                     this.terrain[ii].y += this.vert_speed;//1;
                 }
@@ -156,6 +170,10 @@ class Game {
         if (this.base.y > 237 && this.game && this.intro && keyIsPressed) {
             this.intro = false;
         }
+    }
+
+    collide(a, b) {
+        return a.x+a.w>b.x && a.x<b.x+b.w && a.y+a.h>b.y && a.y<b.y+b.h;
     }
 
     hitcolortest(obj, clr) {
@@ -191,10 +209,15 @@ class Game {
         }
  
         for (let ii=0; ii<3; ii++) {
+            this.home[ii].x = this.data_home[ii][0];
+            this.home[ii].out = this.data_home[ii][1];
             this.terrain[ii].form = this.data_terrain[ii];
             this.island[ii].form = this.data_island[ii];
+            this.home[ii].x = 80;
+            this.home[ii].y = -ii * 350;
         }
         this.terrain[0].y = 100;
+        this.terrain_intro.y = 100;
     }
 
     enemies() {     // enemies = inimigos
@@ -264,7 +287,6 @@ class Game {
                     while (pos) {
                         this.enemy[ii].x = floor(random(0, 8) * 84 + 23);
                         pos = this.hitcolortest(this.enemy[ii], clr[2]);
-                        console.log("pos = " + pos);
                     }
                     this.enemy[ii].y = -this.eny_box / 3;
                 }
@@ -301,6 +323,8 @@ class Game {
             this.island[ii].y = this.base.y - (2000+ii*246);
             this.terrain[ii].y = this.base.y - (330+ii*300);
 
+            if (this.intro) this.terrain_intro.show();
+
             if (this.terrain[ii].y < this.screen_height) {
                 this.terrain[ii].show();
             }
@@ -310,7 +334,38 @@ class Game {
             }
         }
 
+        this.terrain_intro.y = this.base.y + 210;
+
         for (let ii=0; ii<3; ii++) {
+            // moves house & base in y (movimenta casa e base em y)
+            this.home[ii].y += this.mover * this.vel_y;
+
+            // randomly place houses (posiciona casinhas aleatoreamente)
+            // if (this.home[ii].y == this.screen_height) -> replace with:
+            if (this.home[ii].y > this.screen_height-1) {
+                this.home[ii].y = 0;
+                let rnd_home = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+                //seq_mix(rnd_home, 0, 8);    // scramble array (embaralha array)
+                shuffle(rnd_home, true);    // p5.js shuffle(), true param->modify passed array
+                for (let jj=0; jj<8; jj++ ){
+                    this.home[ii].x = rnd_home[jj] * this.home[ii].w + 25;
+                    // colidir = collide
+                    if (this.hitcolortest(this.home[ii], clr[3]) || this.bridges[2].t_expl ||
+                            this.collide(this.home[ii], this.bridges[0]) ||
+                            this.collide(this.home[ii], this.bridges[1]) ||
+                            this.collide(this.home[ii], this.bridges[2])) {
+                        this.home[ii].out = true
+                    } else {
+                        this.home[ii].out = false;
+                        break;
+                    }
+                }
+            }
+
+            if (this.home[ii].y < this.screen_height) {
+                this.home[ii].show();
+            }
+
             // bridges (pontes)
             this.bridges[ii].y = this.base.y + 164;
             // in python x < y < z is equivalent to x < y and y < z

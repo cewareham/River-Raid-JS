@@ -1,5 +1,6 @@
 "use strict";
 
+// class for islands -> org class Ilhas (island)
 class Island {
     constructor(wdt, form, y) {
         this.y = y

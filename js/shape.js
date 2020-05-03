@@ -1,5 +1,6 @@
 "use strict";
 
+// class for shape -> org class Obj
 class Shape {
     constructor(x, y, w, h, shape, out, t_expl) {
         this.x = x;
