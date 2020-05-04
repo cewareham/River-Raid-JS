@@ -94,5 +94,6 @@ class Bridge {
                 }
             }
         }
+        if (this.t_expl) this.t_expl -= 1;
     }
 }

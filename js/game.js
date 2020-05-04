@@ -4,7 +4,7 @@
 class Game {
     constructor(canvas) {
         this.canvas = canvas;
-        this.defaultVSpeed = 5;
+        this.defaultVSpeed = 3;
         this.vel_y = this.defaultVSpeed;     // y velocity -> vertical speed, default = 2
         this.speed = 0;
         this.lives = 1;     // lives = vidas
@@ -16,6 +16,8 @@ class Game {
         this.eny_box = 96;
         this.frame = 0;
 
+        this.TRAINING_MODE = false;
+
         this.vert_speed = this.defaultVSpeed;
         this.paused = false;
 
@@ -26,6 +28,7 @@ class Game {
         this.gas_level = 166;   // gaz_level
         this.hitplane = false;
         this.screen_height = 480;
+        this.s_gas_alert = "gas_full";
         this.home = [];     // home (casa)
         this.island = [];   // island (ilha)
         this.terrain = [];
@@ -81,13 +84,20 @@ class Game {
 
     restart() {
         this.lives = 3;     // vidas
-        this.points = 1056;    // pontos
+        this.points = 0;    // pontos
         this.base.y = -100;
         this.mover = false;
         this.gas_level = 166;
         this.plane.out = true;
         this.hitplane = false;
         this.bridges[2].out = true;
+        this.s_gas_alert = "gas_full";
+
+        //  stop sounds (parando os sons)
+        ASSETS.sndVoo0.stop();
+        ASSETS.sndVoo1.stop();
+        ASSETS.sndVoo2.stop();
+        ASSETS.sndGas_alert.stop();
 
         for (let ii=0; ii<3; ii++) {
             this.terrain[ii].form = 3;
@@ -170,10 +180,13 @@ class Game {
         //if (this.base.y == 238 && this.game && this.intro && keyPressed()) {
         if (this.base.y > 237 && this.game && this.intro && keyIsPressed) {
             this.intro = false;
+            ASSETS.sndVoo1.loop();
+            ASSETS.sndVoo1.play();
         }
     }
 
     collide(a, b) {
+        if (this.TRAINING_MODE) return false;
         return a.x+a.w>b.x && a.x<b.x+b.w && a.y+a.h>b.y && a.y<b.y+b.h;
     }
 
@@ -239,7 +252,7 @@ class Game {
     }
 
     hittest() {
-        this.t_expl = 40;
+        let t_expl = 40;
         // Shot crashes into walls (Tiro colide com paredes)
         if (this.hitcolortest(this.shot, clr[2])) {
             this.shot.y = -this.shot.h
@@ -247,10 +260,17 @@ class Game {
 
         // Airplane with walls (Avião com paredes)
         if ((this.hitcolortest(this.plane, clr[2]) || this.hitplane || !this.gas_level) && !this.plane.out) {
+            ASSETS.sndVoo0.stop();
+            ASSETS.sndVoo1.stop();
+            ASSETS.sndVoo2.stop();
             this.mover = false;
             this.hitplane = false;
             this.plane.out = true;
+            ASSETS.sndGas_alert.stop();
             this.plane.t_expl = 40;
+            this.s_gas_alert = "gas_full";
+            if (this.gas_level) ASSETS.sndS_explode.play();
+            else ASSETS.sndGas_explode.play();
         }
 
         let enehit = 0;
@@ -287,6 +307,50 @@ class Game {
             }
             this.enemy[ii].x -= hit/2;
             this.enemy[ii].w = hit;
+
+            // Shot collides with objects (Tiro colide com objetos)
+            if (this.collide(this.shot, this.enemy[ii]) && !this.enemy[ii].out && this.shot.y >= 0) {
+                this.enemy[ii].t_expl = t_expl;
+                this.enemy[ii].out = true;
+                enehit = this.enemy[ii].shape;
+                ASSETS.sndShot.stop();
+                ASSETS.sndS_explode.play();
+                this.shot.y = -this.shot.h;
+            }
+
+            // Airplane with enemies (Avião com inimigos)
+            if (this.collide(this.plane, this.enemy[ii]) && this.enemy[ii].shape < 11 && !this.enemy[ii].out) {
+                this.enemy[ii].t_expl = t_expl;
+                this.enemy[ii].out = true;
+                enehit = this.enemy[ii].shape;
+                ASSETS.sndShot.stop();
+                this.hitplane = true;
+            }
+
+            // Airplane with gasoline (Avião com gasolina) -> shape #11 is fuel
+            if (this.collide(this.plane, this.enemy[ii]) && this.enemy[ii].shape==11 && !this.enemy[ii].out && !this.plane.out) {
+                if (this.gas_level < 165) {
+                    if (!ASSETS.sndGas0.isPlaying()) ASSETS.sndGas0.play();
+                    this.gas_level += 0.3;
+                } else {
+                    if (!ASSETS.sndGas1.isPlaying()) ASSETS.sndGas1.play();
+
+                }
+            }
+
+            // Base bridge shot (Tiro com a ponte da base)
+            if (this.collide(this.bridges[2], this.shot) && !this.bridges[2].out && this.shot.y >=0) {
+                this.save_pos();
+                this.bridges[2].t_expl = t_expl;
+                this.bridges[2].out = true;
+                this.points += 250;
+                ASSETS.sndShot.stop();
+                ASSETS.sndS_explode.play();
+                this.shot.y = -100;
+            }
+
+            // Points for hitting enemies (Pontos ao atingir inimigos)
+
         }
     }
 
@@ -376,7 +440,7 @@ class Game {
             this.gaslev += 1;
             if (this.gaslev > 100) {
                 this.gaslev = 0;
-                this.gas_level -= 5;
+                if (!this.TRAINING_MODE) this.gas_level -= 5;
             }
             if (this.gas_level < 0) {
                 this.gas_level = 0;
@@ -519,7 +583,7 @@ class Game {
         rect(335+this.gas_level, 529, 10, 27);
 
         // lives (vidas)
-        textFont(fntCooperBlack);
+        textFont(ASSETS.fntCB);   // cooper black font
         textSize(34);
         fill(232, 232, 74);
         text(this.lives, 290, 554+32);
