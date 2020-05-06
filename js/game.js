@@ -4,21 +4,22 @@
 class Game {
     constructor(canvas) {
         this.canvas = canvas;
-        this.defaultVSpeed = 3;
-        this.vel_y = this.defaultVSpeed;     // y velocity -> vertical speed, default = 2
+        this.defaultVSpeed = 2;
+        this.horiz_speed = 2                // x velocity of player
+        this.maxVel_y = 10;                 // max vertical velocity
+        this.vel_y = this.defaultVSpeed;    // y velocity -> vertical speed, default = 2
         this.speed = 0;
         this.lives = 1;     // lives = vidas
         this.n_eny = 5;
         this.gaslev = 0;    // gazlev
         this.points = 0;    // pontos=points, pontes=bridges
         this.propeller = 0; // helice = propeller
+        this.prop = 0;
         this.delay_y = 3;
         this.eny_box = 96;
         this.frame = 0;
 
         this.TRAINING_MODE = false;
-
-        this.vert_speed = this.defaultVSpeed;
         this.paused = false;
 
         this.mover = false;
@@ -92,6 +93,7 @@ class Game {
         this.hitplane = false;
         this.bridges[2].out = true;
         this.s_gas_alert = "gas_full";
+        this.vel_y = this.defaultVSpeed;
 
         //  stop sounds (parando os sons)
         ASSETS.sndVoo0.stop();
@@ -126,13 +128,13 @@ class Game {
         // when this.base.y hits 240 the intro code below is skipped
         if (this.base.y < 238 && !this.game) {
             this.intro = true;
-            this.base.y += this.vert_speed;//5;
+            this.base.y += this.vel_y;
             for (let ii=0; ii<this.n_eny; ii++) {
-                this.enemy[ii].y += this.vert_speed;//5;
+                this.enemy[ii].y += this.vel_y;
                 if (ii < 3) {
-                    this.home[ii].y += this.vert_speed;//1; // casa = home
-                    this.island[ii].y += this.vert_speed;//5;
-                    this.terrain[ii].y += this.vert_speed;//5;
+                    this.home[ii].y += this.vel_y;      // casa = home
+                    this.island[ii].y += this.vel_y;
+                    this.terrain[ii].y += this.vel_y;
                 }
             }
         }
@@ -142,17 +144,17 @@ class Game {
         }
 
         if (this.base.y < 238 && this.game && this.intro) {
-            this.base.y += this.vert_speed;//5;
+            this.base.y += this.vel_y;
             for (let ii=0; ii<this.n_eny; ii++) {
                 // Space between base and enemies (Espaco entre a base e os inimigos)
                 if (this.enemy[ii].y > this.base.y + 4) {
                     this.enemy[ii].out = true;
                 }
-                this.enemy[ii].y += this.vert_speed;//1;
+                this.enemy[ii].y += this.vel_y;
                 if (ii < 3) {
-                    this.home[ii].y += this.vert_speed;//1; // casa = home
-                    this.island[ii].y += this.vert_speed;//1;
-                    this.terrain[ii].y += this.vert_speed;//1;
+                    this.home[ii].y += this.vel_y;      // casa = home
+                    this.island[ii].y += this.vel_y;
+                    this.terrain[ii].y += this.vel_y;
                 }
             }
         }
@@ -275,11 +277,11 @@ class Game {
 
         let enehit = 0;
         for (let ii=0; ii<this.n_eny; ii++) {
-            // move plane on x axis (movimenta aviões no eixo x)
+            // move planes on x axis (movimenta aviões no eixo x)
             if (this.enemy[ii].shape==5 || this.enemy[ii].shape==6 ||this.enemy[ii].shape==8 ||this.enemy[ii].shape==9) {
-                this.enemy[ii].dir = -2;                
+                this.enemy[ii].dir = -1;                
             } else {
-                this.enemy[ii].dir = 2;
+                this.enemy[ii].dir = 1;
             }
 
             let hit = this.enemy[ii].w;
@@ -338,6 +340,20 @@ class Game {
                 }
             }
 
+            // Airplane with bridges (Avião com pontes)
+            if ((this.collide(this.plane, this.bridges[0]) || this.collide(this.plane, this.bridges[1])) && !this.plane.out) {
+                this.hitplane = true;
+            }
+
+            // Airplane with base bridge (Avião com ponte base)
+            if (this.collide(this.plane, this.bridges[2]) && !this.bridges[2].out) {
+                this.save_pos();
+                this.hitplane = true;
+                this.points += 250;
+                this.bridges[2].out = true;
+                this.bridges[2].t_expl = t_expl;
+            }
+
             // Base bridge shot (Tiro com a ponte da base)
             if (this.collide(this.bridges[2], this.shot) && !this.bridges[2].out && this.shot.y >=0) {
                 this.save_pos();
@@ -350,19 +366,28 @@ class Game {
             }
 
             // Points for hitting enemies (Pontos ao atingir inimigos)
-
+            if (2 < enehit && enehit < 7) {         // helicopter (helicoptero)
+                this.points += 80
+            } else if (6 < enehit && enehit < 9) {  // ship (navio)
+                this.points +=40;
+            } else if (8 < enehit && enehit < 11) { // airplane (avião)
+                this.points += 120
+            } else if (enehit == 11) {              // gas stationg (Posto gaz0
+                this.points += 30;
+            }
         }
     }
 
     enemies() {     // enemies = inimigos
-        this.propeller = !this.propeller;
+        this.prop++;
+        if (this.prop % 4 == 0) this.propeller = !this.propeller;
         this.hittest();
 
         for (let ii=0; ii<this.n_eny; ii++) {
-            // animate helicopter propeller (anima helice dos helicopteros)
-            if (this.propeller && this.enemy[ii].shape == 3 || this.enemy[ii].shape == 5) {
-                this.enemy[ii].shape += 1;
-            } else if (this.enemy[ii].shape == 4 || this.enemy[ii].shape == 6) {
+            if (this.propeller) {       // animate helicopter propeller
+                if (this.enemy[ii].shape == 3 || this.enemy[ii].shape == 5)
+                    this.enemy[ii].shape += 1;
+                else if (this.enemy[ii].shape == 4 || this.enemy[ii].shape == 6)
                 this.enemy[ii].shape -= 1;
             }
 
@@ -425,11 +450,11 @@ class Game {
                     }
                     this.enemy[ii].y = -this.eny_box / 3;
                 }
-                if (-370 <= this.base.y && this.base.y < 50 && this.enemy[ii].y > this.screen_height + this.eny_box/2 -1) {
+                if (-370 <= this.base.y && this.base.y < 50 && this.enemy[ii].y > (this.screen_height + this.eny_box/2) -1) {
                     this.enemy[ii].out = true;
                 }
 
-                if (this.enemy[ii].y > this.screen_height + this.eny_box / 2 - 1) {
+                if (this.enemy[ii].y > (this.screen_height + this.eny_box / 2) - 1) {
                     this.enemy[ii].y = -this.eny_box / 2;
                 }
             }
@@ -442,9 +467,25 @@ class Game {
                 this.gaslev = 0;
                 if (!this.TRAINING_MODE) this.gas_level -= 5;
             }
-            if (this.gas_level < 0) {
-                this.gas_level = 0;
-            }
+            if (this.gas_level < 0) this.gas_level = 0;
+        }
+
+        // Gasoline warning running out (Aviso de gasolina acabando)
+        if (this.gas_level <= 70 && this.s_gas_alert == "gas_full") {
+            this.s_gas_alert = "gas_alert";
+            ASSETS.sndGas_alert.loop();
+            ASSETS.sndGas_alert.play();
+        }
+        if (this.gas_level <= 5 && this.gaslev > 80 && this.s_gas_alert == "gas_alert") {
+            this.s_gas_alert = "gas_end";
+            ASSETS.sndGas_alert.stop();
+            ASSETS.sndGas_end.play();
+        }
+
+        if (this.s_gas_alert != "gas_full" && this.gas_level > 70) {
+            this.s_gas_alert = "gas_full";
+            ASSETS.sndGas_end.stop();
+            ASSETS.sndGas_alert.stop();
         }
     }
  
@@ -518,8 +559,9 @@ class Game {
     }
   
     render() {
-        // river
-        background(clr[3]);     // river -> blue
+        // river (rio) -> flash river color when bridge explodes
+        if (this.bridges[2].t_expl % 2) background(clr[8]);
+        else background(clr[3]);     // river -> blue
 
         // releasing control (Liberando controle)
         if (!this.plane.out && !this.intro) {
@@ -604,7 +646,7 @@ class Game {
     control() {
         // game speed (velocidade do jogo)
         if (this.game && !this.intro) {
-            this.speed += this.vert_speed;//1;
+            this.speed += this.vel_y;
             if (this.speed > this.delay_y) {
                 this.mover = true;
                 this.speed = 0;
@@ -613,36 +655,64 @@ class Game {
             }
         }
 
-        // controlling steering with arrow keys (Controlando a direcao)
+        // control [steering] direction [with arrow keys] (Controlando a direcao)
         this.plane.shape = this.eShape.PLANE;
         if (keyIsDown(LEFT_ARROW) && this.plane.x > 10) {
-            this.plane.x -= 5;
+            this.plane.x -= this.horiz_speed;
             this.plane.shape = this.eShape.PLANE_LEFT;
         }
         if (keyIsDown(RIGHT_ARROW) && this.plane.x < 734) {
-            this.plane.x += 5;
+            this.plane.x += this.horiz_speed;
             this.plane.shape = this.eShape.PLANE_RIGHT;
         }
 
-        // controlling the speed (controlando a velocidade)
+        // control speed (controlando a velocidade)
         if (keyIsDown(UP_ARROW)) {
+            if (this.delay_y > 0) {
+                this.vel_y++;
+                if (this.vel_y > this.maxVel_y) this.vel_y = this.maxVel_y;
+                ASSETS.sndVoo0.stop();
+                ASSETS.sndVoo1.stop();
+                ASSETS.sndVoo2.loop();
+                ASSETS.sndVoo2.play();
+            }
             this.delay_y = 0;
         } else if (keyIsDown(DOWN_ARROW)) {
+            if (this.delay_y < 2) {
+                this.vel_y--;
+                if (this.vel_y < 1) this.vel_y = 1;
+                ASSETS.sndVoo1.stop();
+                ASSETS.sndVoo2.stop();
+                ASSETS.sndVoo0.loop();
+                ASSETS.sndVoo0.play();
+            }
             this.delay_y = 2;
         } else {
+            if (this.delay_y != 1) {
+                this.vel_y--;
+                if (this.vel_y < this.defaultVSpeed) this.vel_y = this.defaultVSpeed;
+                ASSETS.sndVoo0.stop();
+                ASSETS.sndVoo2.stop();
+                ASSETS.sndVoo1.loop();
+                ASSETS.sndVoo1.play();
+            }
             this.delay_y = 1;
         }
 
         // shooting (atriando)
         if (keyIsDown(32))      // keycode 32 = space bar
             this.shot.shooting = true;
+            if (this.shot.y == this.plane.y - 15) {
+                ASSETS.sndShot.stop();
+                ASSETS.sndShot.play();
+            }
 
         if (keyIsDown(80)) {    // keycode 80 = 'p' -> pause, set scrolling to 0 speed
             this.paused = !this.paused;
             if (this.paused) {
-                this.vel_y = this.vert_speed = 0;
+                this.vel_y = 0;
             } else {
-                this.vel_y = this.vert_speed = this.defaultVSpeed;
+                this.vel_y = this.defaultVSpeed;
             }
         }
     }
