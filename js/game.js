@@ -14,7 +14,6 @@ class Game {
         this.gaslev = 0;    // gazlev
         this.points = 0;    // pontos=points, pontes=bridges
         this.propeller = 0; // helice = propeller
-        this.prop = 0;
         this.delay_y = 3;
         this.eny_box = 96;
         this.frame = 0;
@@ -50,6 +49,7 @@ class Game {
         this.base = new Terrain(width, 8, -100);
         //                      x   y width height  shape#        out expl
         this.plane = new Shape(370, 420, 49, 42, this.eShape.PLANE, 0, 0);
+        this.planeLives = [];
         
         for (let ii=0; ii<3; ii++) {
             this.data_home.push(ii);
@@ -65,6 +65,14 @@ class Game {
 
             this.bridges.push(ii);
             this.bridges[ii] = new Bridge(ii*485, -this.screen_height, 316, 77, 0, 0, 0);
+
+            this.planeLives.push(ii);
+            let plWidth = 25,
+                plHeight = 21,
+                plSpacing = 10,
+                plX = 680 + ii*(plWidth+plSpacing),
+                plY = 490;
+            this.planeLives[ii] = new Shape(plX, plY, plWidth, plHeight, this.eShape.PLANE, 0, 0);
         }
 
         this.terrain_intro = new Terrain(width, 0, 0);
@@ -166,7 +174,7 @@ class Game {
             this.plane.x = 370;
             this.plane.shape = this.eShape.PLANE;
             this.base.y = -100;
-            this.lives -= 1;
+            this.lives--;
         }
 
         //if (this.base.y == 238 && this.game && this.intro) {
@@ -372,15 +380,15 @@ class Game {
                 this.points +=40;
             } else if (8 < enehit && enehit < 11) { // airplane (avião)
                 this.points += 120
-            } else if (enehit == 11) {              // gas stationg (Posto gaz0
+            } else if (enehit == 11) {              // gas stationg (Posto gaz)
                 this.points += 30;
             }
         }
     }
 
     enemies() {     // enemies = inimigos
-        this.prop++;
-        if (this.prop % 4 == 0) this.propeller = !this.propeller;
+        this.frame++;
+        if (this.frame % 4 == 0) this.propeller = !this.propeller;
         this.hittest();
 
         for (let ii=0; ii<this.n_eny; ii++) {
@@ -625,10 +633,20 @@ class Game {
         rect(335+this.gas_level, 529, 10, 27);
 
         // lives (vidas)
-        textFont(ASSETS.fntCB);   // cooper black font
-        textSize(34);
-        fill(232, 232, 74);
-        text(this.lives, 290, 554+32);
+        textFont(ASSETS.fntCB);     // cooper black font
+        fill(232, 232, 74);         // yellow text
+        // textSize(34);
+        // text(this.lives, 290, 554+32);
+        //console.log(this.lives, this.game, this.plane.out, this.intro);
+        if (this.lives <= 0 && this.game && this.plane.out && !this.intro) {
+            textSize(30);
+            let msg = "GAME OVER  F2 to play again",
+                txtWidth = drawingContext.measureText(msg).width,
+                txtX = (width - txtWidth)/2;    // center horizontally
+            text(msg, txtX,/*364-45,*/ 552+36);
+        } else {    // show lives left visually with small planes
+            for (let ii=0; ii<this.lives; ii++) this.planeLives[ii].show();
+        }
 
         // points (pontos)
         if (this.points) {
@@ -639,7 +657,10 @@ class Game {
         if (!this.game) {
             //textFont("arial black");
             textSize(30);
-            text("River Raid JS"/*JavaScript"*/, 364-45, 552+36);
+            let msg = "River Raid JS  F2 to start",
+                txtWidth = drawingContext.measureText(msg).width,
+                txtX = (width - txtWidth)/2;    // center horizontally
+            text(msg, txtX,/*364-45,*/ 552+36);
         }
     }
 
