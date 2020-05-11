@@ -38,33 +38,28 @@ class Game {
         this.data_enemy = [];
         this.data_island = [3, 3, 3];
         this.data_terrain = [3, 3, 3];
-        // define shapes - easier than using #s
-        this.eShape = {
-            PLANE: 0, PLANE_LEFT: 1, PLANE_RIGHT: 2, HELI_RIGHT0: 3, HELI_RIGHT1: 4,
-            HELI_LEFT0: 5, HELI_LEFT1: 6, SHIP_RIGHT: 7, SHIP_LEFT: 8, AIRPLANE_E: 9,
-            AIRPLANE_D: 10, FUEL: 11, EXPL1:12, EXPL2: 13, HOME: 14
-        }
+
         this.centerCanvas();
         this.shot = new Shot(1, 0, 1);  // tiro = 'shot'
         this.base = new Terrain(width, 8, -100);
         //                      x   y width height  shape#        out expl
-        this.plane = new Shape(370, 420, 49, 42, this.eShape.PLANE, 0, 0);
+        this.plane = new Plane(370, 420, 49, 42, CC.eShape.PLANE, 0, 0);
         this.planeLives = [];
         
         for (let ii=0; ii<3; ii++) {
             this.data_home.push(ii);
             this.home.push(ii);
             //                                        14->home (house) shape
-            this.home[ii] = new Shape(-100, 0, 85, 56, 14, 0, 0);
+            this.home[ii] = new Shape(-100, 0, 85, 56, CC.eShape.HOME, 0, 0);
 
             this.island.push(ii);
             this.island[ii] = new Island(width, 1, 0);
 
             this.terrain.push(ii);
-            this.terrain[ii] = new Terrain(width, 3, - ii * 336 - 100);
+            this.terrain[ii] = new Terrain(width, 3, -ii*81*6/*336*/ - 100);
 
             this.bridges.push(ii);
-            this.bridges[ii] = new Bridge(ii*485, -this.screen_height, 316, 77, 0, 0, 0);
+            this.bridges[ii] = new Bridge(ii*485, -this.screen_height, 316, 77,0, 0, 0);
 
             this.planeLives.push(ii);
             let plWidth = 25,
@@ -72,7 +67,7 @@ class Game {
                 plSpacing = 10,
                 plX = 680 + ii*(plWidth+plSpacing),
                 plY = 490;
-            this.planeLives[ii] = new Shape(plX, plY, plWidth, plHeight, this.eShape.PLANE, 0, 0);
+            this.planeLives[ii] = new Plane(plX, plY, plWidth, plHeight, CC.eShape.PLANE, 0, 0);
         }
 
         this.terrain_intro = new Terrain(width, 0, 0);
@@ -80,7 +75,7 @@ class Game {
         this.bridges[2].shape = 1;
         this.bridges[2].x = 312;
         this.bridges[2].out = 1;
-        this.bridges[2].h = 68;
+        this.bridges[2].h = 77;
         this.bridges[2].w = 175;
 
         for (let ii=0; ii< this.n_eny; ii++) {
@@ -112,7 +107,7 @@ class Game {
         for (let ii=0; ii<3; ii++) {
             this.terrain[ii].form = 3;
             this.data_terrain[ii] = 3;
-            this.terrain[ii].y = -ii * 336 - 100;
+            this.terrain[ii].y = -ii*81*6 /*336*/ - 100;
             this.home[ii].x = 80;
             this.data_home[ii] = [80, false];
             this.island[ii].y = -1600;
@@ -172,7 +167,7 @@ class Game {
             this.bridges[2].out = true;     // pontos=points, pontes=bridges
             this.gas_level = 166;
             this.plane.x = 370;
-            this.plane.shape = this.eShape.PLANE;
+            this.plane.shape = CC.eShape.PLANE;
             this.base.y = -100;
             this.lives--;
         }
@@ -335,6 +330,8 @@ class Game {
                 enehit = this.enemy[ii].shape;
                 ASSETS.sndShot.stop();
                 this.hitplane = true;
+                this.paused = false;
+                this.vel_y = this.defaultVSpeed;
             }
 
             // Airplane with gasoline (Avião com gasolina) -> shape #11 is fuel
@@ -351,6 +348,8 @@ class Game {
             // Airplane with bridges (Avião com pontes)
             if ((this.collide(this.plane, this.bridges[0]) || this.collide(this.plane, this.bridges[1])) && !this.plane.out) {
                 this.hitplane = true;
+                this.paused = false;
+                this.vel_y = this.defaultVSpeed;
             }
 
             // Airplane with base bridge (Avião com ponte base)
@@ -360,6 +359,8 @@ class Game {
                 this.points += 250;
                 this.bridges[2].out = true;
                 this.bridges[2].t_expl = t_expl;
+                this.paused = false;
+                this.vel_y = this.defaultVSpeed;
             }
 
             // Base bridge shot (Tiro com a ponte da base)
@@ -558,7 +559,7 @@ class Game {
                 this.bridges[ii].show();
             }
         }
-        this.bridges[2].y = this.base.y + 169;
+        //this.bridges[2].y = this.base.y + 169;  //*** does nothing
 
         // regenerate the bridge (regenera a ponte)
         if (this.base.y > this.screen_height && !this.intro) {
@@ -617,9 +618,22 @@ class Game {
             this.base.y = -400;
             for (let ii=0; ii<3; ii++) {
                 this.terrain[ii].form = floor(random(0, 7));
-                this.island[ii].form = floor(random(0, 13));
+                this.island[ii].form = round(random(0, 13));
             }
         }
+    }
+
+    allSoundOff() {
+        ASSETS.sndVoo0.stop();
+        ASSETS.sndVoo1.stop();
+        ASSETS.sndVoo2.stop();
+        ASSETS.sndGas0.stop();
+        ASSETS.sndGas1.stop();
+        ASSETS.sndShot.stop();
+        ASSETS.sndGas_end.stop();
+        ASSETS.sndGas_alert.stop();
+        ASSETS.sndGas_explode.stop();
+        ASSETS.sndS_explode.stop();
     }
 
     texts() {
@@ -638,7 +652,9 @@ class Game {
         // textSize(34);
         // text(this.lives, 290, 554+32);
         //console.log(this.lives, this.game, this.plane.out, this.intro);
+        // GAME OVER
         if (this.lives <= 0 && this.game && this.plane.out && !this.intro) {
+            this.allSoundOff();
             textSize(30);
             let msg = "GAME OVER  F2 to play again",
                 txtWidth = drawingContext.measureText(msg).width,
@@ -676,16 +692,8 @@ class Game {
             }
         }
 
-        // control [steering] direction [with arrow keys] (Controlando a direcao)
-        this.plane.shape = this.eShape.PLANE;
-        if (keyIsDown(LEFT_ARROW) && this.plane.x > 10) {
-            this.plane.x -= this.horiz_speed;
-            this.plane.shape = this.eShape.PLANE_LEFT;
-        }
-        if (keyIsDown(RIGHT_ARROW) && this.plane.x < 734) {
-            this.plane.x += this.horiz_speed;
-            this.plane.shape = this.eShape.PLANE_RIGHT;
-        }
+
+        this.plane.update();    // check keyboard for left & right
 
         // control speed (controlando a velocidade)
         if (keyIsDown(UP_ARROW)) {
@@ -720,21 +728,12 @@ class Game {
             this.delay_y = 1;
         }
 
-        // shooting (atriando)
-        if (keyIsDown(32))      // keycode 32 = space bar
-            this.shot.shooting = true;
-            if (this.shot.y == this.plane.y - 15) {
-                ASSETS.sndShot.stop();
-                ASSETS.sndShot.play();
-            }
+        this.shot.update();
 
         if (keyIsDown(80)) {    // keycode 80 = 'p' -> pause, set scrolling to 0 speed
             this.paused = !this.paused;
-            if (this.paused) {
-                this.vel_y = 0;
-            } else {
-                this.vel_y = this.defaultVSpeed;
-            }
+            if (this.paused) this.vel_y = 0;
+            else this.vel_y = this.defaultVSpeed;
         }
     }
 

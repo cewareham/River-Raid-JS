@@ -1,16 +1,30 @@
 "use strict";
 
-// class for shape -> org class Obj
-class Shape {
+// class for plane
+class Plane {
     constructor(x, y, w, h, shape, out, t_expl) {
         this.x = x;
-        this.dir = 0;
         this.y = y;
         this.w = w;
         this.h = h;
-        this.shape = shape; // index into CC.shapes eg. 0 is plane, 1 plane left, etc.
+        this.shape = shape; // index into CC.shapes (constants.js) 0 is plane, 1 plane left, etc.
         this.out = out;
+        this.horiz_speed = 2;
+
         this.t_expl = t_expl;
+    }
+
+    update() {
+        // control [steering] direction [with arrow keys] (Controlando a direcao)
+        this.shape = CC.eShape.PLANE;
+        if (keyIsDown(LEFT_ARROW) && this.x > 10) {
+            this.x -= this.horiz_speed;
+            this.shape = CC.eShape.PLANE_LEFT;
+        }
+        if (keyIsDown(RIGHT_ARROW) && this.x < 734) {
+            this.x += this.horiz_speed;
+            this.shape = CC.eShape.PLANE_RIGHT;
+        }
     }
 
     show() {

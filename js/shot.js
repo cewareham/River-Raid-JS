@@ -10,6 +10,17 @@ class Shot {
         this.speed = 20;
     }
 
+    update() {
+        // shooting (atriando)
+        if (keyIsDown(32)) {      // keycode 32 = space bar
+            this.shooting = true;
+            if (this.y == game.plane.y - 15) {  // game is global var
+                ASSETS.sndShot.stop();
+                ASSETS.sndShot.play();
+            }
+        }
+    }
+
     show(planex, planey) {
         if (this.shooting) {
             this.shooting = false;
