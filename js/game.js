@@ -56,7 +56,7 @@ class Game {
             this.island[ii] = new Island(width, 1, 0);
 
             this.terrain.push(ii);
-            this.terrain[ii] = new Terrain(width, 3, -ii*81*6/*336*/ - 100);
+            this.terrain[ii] = new Terrain(width, 3, -ii*336 - 100);    // ii*81*6
 
             this.bridges.push(ii);
             this.bridges[ii] = new Bridge(ii*485, -this.screen_height, 316, 77,0, 0, 0);
@@ -107,7 +107,7 @@ class Game {
         for (let ii=0; ii<3; ii++) {
             this.terrain[ii].form = 3;
             this.data_terrain[ii] = 3;
-            this.terrain[ii].y = -ii*81*6 /*336*/ - 100;
+            this.terrain[ii].y = -ii*336 - 100;    // ii*81*6
             this.home[ii].x = 80;
             this.data_home[ii] = [80, false];
             this.island[ii].y = -1600;
@@ -129,6 +129,7 @@ class Game {
         // this is the 'intro' when this.game = false
         // for the intro this.base.y goes from -100 to +240
         // when this.base.y hits 240 the intro code below is skipped
+        //*** next IF BLOCK runs on program initial load ***
         if (this.base.y < 238 && !this.game) {
             this.intro = true;
             this.base.y += this.vel_y;
@@ -146,6 +147,7 @@ class Game {
             this.read_pos();
         }
 
+        //*** next IF BLOCK runs after pressing F2 ***
         if (this.base.y < 238 && this.game && this.intro) {
             this.base.y += this.vel_y;
             for (let ii=0; ii<this.n_eny; ii++) {
@@ -519,7 +521,7 @@ class Game {
             }
         }
 
-        this.terrain_intro.y = this.base.y + 210;
+        this.terrain_intro.y = this.base.y + 210;//210;
 
         for (let ii=0; ii<3; ii++) {
             // moves house & base in y (movimenta casa e base em y)
@@ -552,7 +554,10 @@ class Game {
             }
 
             // bridges (pontes)
-            this.bridges[ii].y = this.base.y + 164;
+            // this.base.y starts @ -100, so move bridge down that much +
+            //  the bridge's height minus some pixels so it's bottom is @
+            //  bottom of game screen (at start)
+            this.bridges[ii].y = this.base.y + 100+this.bridges[ii].h-26;
             // in python x < y < z is equivalent to x < y and y < z
             // in javascript x < y < z is equiv to x < y [true or false] and [true or false, i.e 1 or 0] < z
             if (-this.screen_height < this.base.y && this.base.y < this.screen_height) {
@@ -692,8 +697,7 @@ class Game {
             }
         }
 
-
-        this.plane.update();    // check keyboard for left & right
+        this.plane.update();    // check keyboard left & right arrow keys
 
         // control speed (controlando a velocidade)
         if (keyIsDown(UP_ARROW)) {
