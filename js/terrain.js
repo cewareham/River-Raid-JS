@@ -21,7 +21,7 @@ class Terrain {
             let invert = (this.wdt - this.w) - maps[this.form][py] * this.w;
             rect(invert, this.y + py * this.h, this.wdt - invert, this.h);
         }
-        this.showMapNum(maps);
+        //this.showMapNum(maps);
     }
 
     showMapNum(maps) {

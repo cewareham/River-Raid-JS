@@ -19,7 +19,7 @@ class Island {
             let invert = (this.wdt/2)-this.w*islands[this.form][py];
             rect(invert, this.y + py * this.h, (this.wdt/2)-invert, this.h);
         }
-        this.showIslandNum(islands);
+        //this.showIslandNum(islands);
     }
 
     showIslandNum(islands) {
