@@ -19,6 +19,7 @@ class Game {
         this.frame = 0;
 
         this.TRAINING_MODE = false;
+        this.colorCode = false;
         this.paused = false;
 
         this.mover = false;
@@ -125,6 +126,17 @@ class Game {
     }
   
     update() {
+        //console.log("this.intro = " + this.intro);
+        //this.colorCode = true;
+        // clr[2] (islands) -> terrain green
+        // clr[3] (water)   -> water blue
+        if (this.colorCode) {
+            this.terrain_intro.clr = clr[1];    // yellow
+            this.terrain[0].clr = clr[4];       // tan
+            this.terrain[1].clr = clr[5];       // dark green
+            this.terrain[2].clr = clr[6];       // dark blue
+            this.base.clr = clr[8];             // brown
+        }
         // scroll island down to start (base) position (base.y = 240)
         // this is the 'intro' when this.game = false
         // for the intro this.base.y goes from -100 to +240
